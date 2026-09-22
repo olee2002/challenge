@@ -1,0 +1,40 @@
+:root {
+  font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #111827;
+  background-color: #fff7ed;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #fff7ed;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, rgba(255, 247, 237, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+#root {
+  min-height: 100vh;
+}
