@@ -12,7 +12,11 @@ const TEAM_STATE_ID = 'challenge_team';
 const CHALLENGE_START_DATE = new Date(2026, 8, 23);
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+const isValidSupabaseUrl = (value) =>
+  typeof value === 'string' && value.trim().startsWith('http://') ||
+  typeof value === 'string' && value.trim().startsWith('https://');
+const supabase =
+  isValidSupabaseUrl(supabaseUrl) && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 const generate100Days = () => {
   const days = [];
