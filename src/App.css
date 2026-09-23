@@ -242,7 +242,7 @@
 
 .challenge-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -393,6 +393,18 @@
   letter-spacing: 0.02em;
 }
 
+@media (max-width: 639px) {
+  .challenge-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .challenge-item {
+    min-height: 200px;
+  }
+}
+
 @media (min-width: 640px) {
   .challenge-info {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -400,6 +412,6 @@
   }
 
   .challenge-grid {
-    grid-template-columns: repeat(10, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
