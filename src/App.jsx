@@ -77,36 +77,13 @@ const saveTeam = (team) => {
   safeWriteStorage(getUserScopedStorageDataKey(), team);
 };
 
-const getStoredTeam = () => {
+const parseStoredTeam = (rawValue) => {
+  if (!rawValue) {
+    return null;
+  }
+
   try {
-    const userScopedKey = getUserScopedStorageDataKey();
-    const saved = safeReadStorage(userScopedKey);
-
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (!parsed || !Array.isArray(parsed.participants) || parsed.participants.length === 0) {
-        return null;
-      }
-
-      const hasLegacyNames = parsed.participants.some((participant) =>
-        LEGACY_TEAM_NAMES.includes(participant.name),
-      );
-
-      if (hasLegacyNames) {
-        safeWriteStorage(userScopedKey, null);
-        safeWriteStorage(TEAM_STORAGE_KEY, null);
-        return null;
-      }
-
-      return parsed;
-    }
-
-    const legacySaved = safeReadStorage(TEAM_STORAGE_KEY);
-    if (!legacySaved) {
-      return null;
-    }
-
-    const parsed = JSON.parse(legacySaved);
+    const parsed = JSON.parse(rawValue);
     if (!parsed || !Array.isArray(parsed.participants) || parsed.participants.length === 0) {
       return null;
     }
@@ -116,13 +93,35 @@ const getStoredTeam = () => {
     );
 
     if (hasLegacyNames) {
-      safeWriteStorage(userScopedKey, null);
-      safeWriteStorage(TEAM_STORAGE_KEY, null);
       return null;
     }
 
-    safeWriteStorage(userScopedKey, parsed);
     return parsed;
+  } catch (error) {
+    console.warn('Failed to parse stored team data:', error);
+    return null;
+  }
+};
+
+const getStoredTeam = () => {
+  try {
+    const userScopedKey = getUserScopedStorageDataKey();
+    const saved = safeReadStorage(userScopedKey);
+    const parsedUserTeam = parseStoredTeam(saved);
+
+    if (parsedUserTeam) {
+      return parsedUserTeam;
+    }
+
+    const legacySaved = safeReadStorage(TEAM_STORAGE_KEY);
+    const parsedLegacyTeam = parseStoredTeam(legacySaved);
+
+    if (!parsedLegacyTeam) {
+      return null;
+    }
+
+    safeWriteStorage(userScopedKey, parsedLegacyTeam);
+    return parsedLegacyTeam;
   } catch (error) {
     console.warn('Failed to read saved team data:', error);
     return null;

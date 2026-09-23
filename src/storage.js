@@ -3,24 +3,42 @@ export const LOCAL_USER_STORAGE_KEY = 'challenge100-local-user';
 
 const TEAM_NAME_DEFAULTS = ['하니', '올리', '벨라', '나쵸', '운동해'];
 
+const getSafeSessionStorage = () => {
+  try {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.sessionStorage ?? null;
+  } catch (error) {
+    console.warn('sessionStorage is unavailable:', error);
+    return null;
+  }
+};
+
 export const getCurrentLocalUserId = () => {
   if (typeof window === 'undefined') {
     return 'default-user';
   }
 
-  const existingUserId = window.sessionStorage?.getItem(LOCAL_USER_STORAGE_KEY);
-  if (existingUserId) {
-    return existingUserId;
+  const sessionStorage = getSafeSessionStorage();
+  if (!sessionStorage) {
+    return 'default-user';
   }
 
-  const generatedUserId = `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   try {
-    window.sessionStorage?.setItem(LOCAL_USER_STORAGE_KEY, generatedUserId);
+    const existingUserId = sessionStorage.getItem(LOCAL_USER_STORAGE_KEY);
+    if (existingUserId) {
+      return existingUserId;
+    }
+
+    const generatedUserId = `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    sessionStorage.setItem(LOCAL_USER_STORAGE_KEY, generatedUserId);
+    return generatedUserId;
   } catch (error) {
     console.warn('Failed to persist local user id:', error);
+    return 'default-user';
   }
-
-  return generatedUserId;
 };
 
 export const getUserScopedStorageKey = (baseKey, userId = getCurrentLocalUserId()) => {
