@@ -1,6 +1,39 @@
 export const TEAM_STORAGE_KEY = 'challenge100-team';
+export const LOCAL_USER_STORAGE_KEY = 'challenge100-local-user';
 
 const TEAM_NAME_DEFAULTS = ['하니', '올리', '벨라', '나쵸', '운동해'];
+
+export const getCurrentLocalUserId = () => {
+  if (typeof window === 'undefined') {
+    return 'default-user';
+  }
+
+  const existingUserId = window.sessionStorage?.getItem(LOCAL_USER_STORAGE_KEY);
+  if (existingUserId) {
+    return existingUserId;
+  }
+
+  const generatedUserId = `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  try {
+    window.sessionStorage?.setItem(LOCAL_USER_STORAGE_KEY, generatedUserId);
+  } catch (error) {
+    console.warn('Failed to persist local user id:', error);
+  }
+
+  return generatedUserId;
+};
+
+export const getUserScopedStorageKey = (baseKey, userId = getCurrentLocalUserId()) => {
+  if (!baseKey) {
+    return baseKey;
+  }
+
+  if (!userId) {
+    return baseKey;
+  }
+
+  return `${baseKey}:${userId}`;
+};
 
 const generate100Days = () => {
   const days = [];
@@ -42,6 +75,9 @@ export const createDefaultTeam = () => {
     participants,
   };
 };
+
+export const getUserScopedStorageDataKey = (baseKey = TEAM_STORAGE_KEY) =>
+  getUserScopedStorageKey(baseKey, getCurrentLocalUserId());
 
 export const safeReadStorage = (key) => {
   try {

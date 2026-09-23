@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { TEAM_STORAGE_KEY, safeReadStorage, safeWriteStorage } from './storage.js';
+import {
+  TEAM_STORAGE_KEY,
+  safeReadStorage,
+  safeWriteStorage,
+  getUserScopedStorageDataKey,
+} from './storage.js';
 import './App.css';
 
 const TEAM_STATE_ID = 'challenge_team';
@@ -53,6 +58,7 @@ const getMonthColor = (month) => {
 const createParticipant = (name, index = 0) => ({
   id: `${name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}-${index}`,
   name,
+  challenge: '',
   days: generate100Days(),
 });
 
@@ -68,17 +74,39 @@ const createDefaultTeam = () => {
 };
 
 const saveTeam = (team) => {
-  safeWriteStorage(TEAM_STORAGE_KEY, team);
+  safeWriteStorage(getUserScopedStorageDataKey(), team);
 };
 
 const getStoredTeam = () => {
   try {
-    const saved = safeReadStorage(TEAM_STORAGE_KEY);
-    if (!saved) {
+    const userScopedKey = getUserScopedStorageDataKey();
+    const saved = safeReadStorage(userScopedKey);
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (!parsed || !Array.isArray(parsed.participants) || parsed.participants.length === 0) {
+        return null;
+      }
+
+      const hasLegacyNames = parsed.participants.some((participant) =>
+        LEGACY_TEAM_NAMES.includes(participant.name),
+      );
+
+      if (hasLegacyNames) {
+        safeWriteStorage(userScopedKey, null);
+        safeWriteStorage(TEAM_STORAGE_KEY, null);
+        return null;
+      }
+
+      return parsed;
+    }
+
+    const legacySaved = safeReadStorage(TEAM_STORAGE_KEY);
+    if (!legacySaved) {
       return null;
     }
 
-    const parsed = JSON.parse(saved);
+    const parsed = JSON.parse(legacySaved);
     if (!parsed || !Array.isArray(parsed.participants) || parsed.participants.length === 0) {
       return null;
     }
@@ -88,10 +116,12 @@ const getStoredTeam = () => {
     );
 
     if (hasLegacyNames) {
+      safeWriteStorage(userScopedKey, null);
       safeWriteStorage(TEAM_STORAGE_KEY, null);
       return null;
     }
 
+    safeWriteStorage(userScopedKey, parsed);
     return parsed;
   } catch (error) {
     console.warn('Failed to read saved team data:', error);
@@ -302,6 +332,15 @@ export default function App() {
     });
   };
 
+  const updateParticipantChallenge = (participantId, value) => {
+    setTeam((previous) => ({
+      ...previous,
+      participants: previous.participants.map((participant) =>
+        participant.id === participantId ? { ...participant, challenge: value } : participant,
+      ),
+    }));
+  };
+
   const addParticipant = () => {
     const trimmedName = newParticipantName.trim();
     if (!trimmedName) {
@@ -427,6 +466,15 @@ export default function App() {
                 >
                   ×
                 </button>
+                <input
+                  type="text"
+                  className="team-member-challenge-input"
+                  value={participant.challenge ?? ''}
+                  onChange={(event) => updateParticipantChallenge(participant.id, event.target.value)}
+                  onClick={(event) => event.stopPropagation()}
+                  placeholder="챌린지 항목"
+                  aria-label={`${participant.name} 챌린지 항목`}
+                />
               </div>
             );
           })}
@@ -470,13 +518,15 @@ export default function App() {
               tabIndex={0}
               aria-label={`${item.dayNum}일차 ${item.dateStr} ${item.dayOfWeek}`}
             >
-              <div className="challenge-top">
-                <span>{item.dayNum}</span>
-                <span className={`check-indicator ${item.checked ? 'checked' : ''}`} />
+              <div className="challenge-main">
+                <div className="challenge-top">
+                  <span>{item.dayNum}</span>
+                  <span className={`check-indicator ${item.checked ? 'checked' : ''}`} />
+                </div>
+                <div className="challenge-date">{item.dateStr}</div>
+                <div className="challenge-weekday">{item.dayOfWeek}</div>
+                {isToday && <div className="today-badge">{todayBadgeText}</div>}
               </div>
-              <div className="challenge-date">{item.dateStr}</div>
-              <div className="challenge-weekday">{item.dayOfWeek}</div>
-              {isToday && <div className="today-badge">{todayBadgeText}</div>}
               <textarea
                 value={item.note}
                 onChange={(event) => updateNote(idx, event.target.value)}
