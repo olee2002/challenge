@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { TEAM_STORAGE_KEY, safeReadStorage, safeWriteStorage } from './storage.js';
 import './App.css';
 
 const TEAM_STATE_ID = 'challenge_team';
@@ -67,16 +68,12 @@ const createDefaultTeam = () => {
 };
 
 const saveTeam = (team) => {
-  try {
-    localStorage.setItem('challenge100-team', JSON.stringify(team));
-  } catch (error) {
-    console.warn('Failed to save team data:', error);
-  }
+  safeWriteStorage(TEAM_STORAGE_KEY, team);
 };
 
 const getStoredTeam = () => {
   try {
-    const saved = localStorage.getItem('challenge100-team');
+    const saved = safeReadStorage(TEAM_STORAGE_KEY);
     if (!saved) {
       return null;
     }
@@ -91,11 +88,7 @@ const getStoredTeam = () => {
     );
 
     if (hasLegacyNames) {
-      try {
-        localStorage.removeItem('challenge100-team');
-      } catch (error) {
-        console.warn('Failed to clear legacy team data:', error);
-      }
+      safeWriteStorage(TEAM_STORAGE_KEY, null);
       return null;
     }
 
