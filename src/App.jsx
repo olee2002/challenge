@@ -66,6 +66,14 @@ const createDefaultTeam = () => {
   };
 };
 
+const saveTeam = (team) => {
+  try {
+    localStorage.setItem('challenge100-team', JSON.stringify(team));
+  } catch (error) {
+    console.warn('Failed to save team data:', error);
+  }
+};
+
 const getStoredTeam = () => {
   try {
     const saved = localStorage.getItem('challenge100-team');
@@ -83,7 +91,11 @@ const getStoredTeam = () => {
     );
 
     if (hasLegacyNames) {
-      localStorage.removeItem('challenge100-team');
+      try {
+        localStorage.removeItem('challenge100-team');
+      } catch (error) {
+        console.warn('Failed to clear legacy team data:', error);
+      }
       return null;
     }
 
@@ -101,7 +113,7 @@ const getInitialTeam = () => {
   }
 
   const defaults = createDefaultTeam();
-  localStorage.setItem('challenge100-team', JSON.stringify(defaults));
+  saveTeam(defaults);
   return defaults;
 };
 
@@ -154,7 +166,7 @@ export default function App() {
     : 0;
 
   useEffect(() => {
-    localStorage.setItem('challenge100-team', JSON.stringify(team));
+    saveTeam(team);
 
     if (!supabase) {
       return;
@@ -175,7 +187,7 @@ export default function App() {
         if (data && data.data) {
           const incomingTeam = data.data;
           setTeam(incomingTeam);
-          localStorage.setItem('challenge100-team', JSON.stringify(incomingTeam));
+          saveTeam(incomingTeam);
           setSyncState('live sync');
           return;
         }
@@ -183,7 +195,7 @@ export default function App() {
         const storedTeam = getStoredTeam() ?? team;
         setTeam(storedTeam);
         await syncTeamToSupabase(storedTeam);
-        localStorage.setItem('challenge100-team', JSON.stringify(storedTeam));
+        saveTeam(storedTeam);
         setSyncState('live sync');
       } catch (error) {
         console.warn('Failed to load shared team:', error);
@@ -213,7 +225,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('challenge100-team', JSON.stringify(team));
+    saveTeam(team);
 
     if (!supabase) {
       return;
@@ -226,7 +238,7 @@ export default function App() {
       } catch (error) {
         console.warn('Failed to save shared team:', error);
         setSyncState('sync failed');
-        localStorage.setItem('challenge100-team', JSON.stringify(team));
+        saveTeam(team);
       }
     };
 
